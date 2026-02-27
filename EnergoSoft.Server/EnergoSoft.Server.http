@@ -1,0 +1,6 @@
+@EnergoSoft.Server_HostAddress = http://localhost:5090
+
+GET {{EnergoSoft.Server_HostAddress}}/api/history/list
+Accept: application/json
+
+###

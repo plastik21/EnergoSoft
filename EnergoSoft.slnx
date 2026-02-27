@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="energosoft.client/energosoft.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="EnergoSoft.Server/EnergoSoft.Server.csproj" />
+</Solution>

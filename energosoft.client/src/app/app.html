@@ -1,0 +1,43 @@
+<tui-root>
+  <div class="tui-container">
+    <table tuiTable
+           [columns]="columns"
+           [sorter]="(sorter$ | async)!"
+           [direction]="(direction$ | async)!"
+           (sorterChange)="sorter$.next($event)"
+           (directionChange)="direction$.next($event)">
+      <thead>
+        <tr tuiThGroup>
+          <th tuiTh *tuiHead="'id'" tuiSortable tuiResizable>Id</th>
+          <th tuiTh *tuiHead="'text'" tuiSortable tuiResizable>Текст</th>
+          <th tuiTh *tuiHead="'fio'" tuiSortable tuiResizable>ФИО</th>
+          <th tuiTh *tuiHead="'date'">Дата</th>
+          <th tuiTh *tuiHead="'typeName'">Тип</th>
+        </tr>
+        <!-- Ряд с фильтрами -->
+        <tr tuiThGroup>
+          <th tuiTh><tui-input size="s" [(ngModel)]="filters.id" (ngModelChange)="onFilterChange()"></tui-input></th>
+          <th tuiTh><tui-input size="s" [(ngModel)]="filters.text" (ngModelChange)="onFilterChange()"></tui-input></th>
+          <th tuiTh><tui-input size="s" [(ngModel)]="filters.fio" (ngModelChange)="onFilterChange()"></tui-input></th>
+          <th tuiTh colspan="2"></th>
+        </tr>
+      </thead>
+
+      <tbody tuiTbody [data]="(data$ | async)?.items">
+        <tr tuiTr *ngFor="let item of (data$ | async)?.items">
+          <td tuiTd>{{ item.id }}</td>
+          <td tuiTd>{{ item.text }}</td>
+          <td tuiTd>{{ item.fio }}</td>
+          <td tuiTd>{{ item.date | date:'dd.MM.yyyy' }}</td>
+          <td tuiTd>{{ item.typeName }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <tui-table-pagination [total]="(data$ | async)?.total || 0"
+                          [page]="(page$ | async) || 0"
+                          [size]="(size$ | async) || 10"
+                          (paginationChange)="page$.next($event.page); size$.next($event.size)">
+    </tui-table-pagination>
+  </div>
+</tui-root>
