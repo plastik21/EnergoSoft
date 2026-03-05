@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="energosoft.client2/energosoft.client2.esproj">
+  <Project Path="energosoft.client3/energosoft.client3.esproj">
     <Build />
     <Deploy />
   </Project>

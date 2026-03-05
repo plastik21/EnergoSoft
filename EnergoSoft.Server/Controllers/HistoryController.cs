@@ -45,10 +45,11 @@
             // Сортировка
             var sortColumns = new Dictionary<string, Expression<Func<History, object>>>
             {
+                { "id", x => x.Id },
                 { "text", x => x.Text ?? string.Empty },
-                { "user", x => x.User.FullName },
-                { "event", x => x.EventType.Name },
+                { "userfullname", x => x.User.FullName },
                 { "date", x => x.Date },
+                { "eventtypename", x => x.EventType.Name }
             };
 
             var sortBy = request.SortBy?.ToLower() ?? "date"; // По-умолчанию сортируем по дате

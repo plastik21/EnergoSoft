@@ -1,0 +1,53 @@
+
+<table tuiTable
+       class="table"
+       [columns]="columns"
+       [direction]="(direction$ | async) ?? -1"
+       [tuiSortBy]="sortKey$ | async"
+       (tuiSortChange)="onSortChange($event)">
+  <thead tuiThead>
+    <tr tuiThGroup>
+      <th *tuiHead="'id'"
+          tuiTh
+          tuiSortable
+          [requiredSort]="true"
+          [resizable]="true">ID</th>
+
+      <th *tuiHead="'text'"
+          tuiTh
+          tuiSortable
+          [requiredSort]="true"
+          [resizable]="true">Текст</th>
+
+      <th *tuiHead="'userFullName'"
+          tuiTh
+          tuiSortable
+          [requiredSort]="true"
+          [resizable]="true">ФИО пользователя</th>
+
+      <th *tuiHead="'date'"
+          tuiTh
+          tuiSortable
+          [requiredSort]="true"
+          [resizable]="true">Дата</th>
+
+      <th *tuiHead="'eventTypeName'"
+          tuiTh
+          tuiSortable
+          [requiredSort]="true"
+          [resizable]="true">Название типа события</th>
+    </tr>
+  </thead>
+  @let sortedData = (request$ | async) || [];
+  <tbody tuiTbody [data]="sortedData">
+    @for (item of sortedData; track item.id) {
+    <tr tuiTr>
+      <td *tuiCell="'id'" tuiTd>{{ item.id }}</td>
+      <td *tuiCell="'text'" tuiTd>{{ item.text }}</td>
+      <td *tuiCell="'userFullName'" tuiTd>{{ item.userFullName }}</td>
+      <td *tuiCell="'date'" tuiTd>{{ item.date | date: 'dd.MM.yyyy HH:mm:ss' }}</td>
+      <td *tuiCell="'eventTypeName'" tuiTd>{{ item.eventTypeName }}</td>
+    </tr>
+    }
+  </tbody>
+</table>
