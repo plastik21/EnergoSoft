@@ -8,6 +8,8 @@
     [Route("api/[controller]")]
     public class HistoryController : ControllerBase
     {
+        private const int DefaultPageSize = 10;
+
         private readonly EnergoSoftDbContext _context;
 
         public HistoryController(EnergoSoftDbContext context)
@@ -47,29 +49,31 @@
             {
                 { "id", x => x.Id },
                 { "text", x => x.Text ?? string.Empty },
-                { "userfullname", x => x.User.FullName },
+                { "userFullName", x => x.User.FullName },
                 { "date", x => x.Date },
-                { "eventtypename", x => x.EventType.Name }
+                { "eventTypeName", x => x.EventType.Name }
             };
 
-            var sortBy = request.SortBy?.ToLower() ?? "date"; // По-умолчанию сортируем по дате
+            var sortBy = !string.IsNullOrWhiteSpace(request.SortBy) ? request.SortBy : "id";
 
             if (!sortColumns.TryGetValue(sortBy, out var keySelector))
             {
-                keySelector = sortColumns["date"];
+                keySelector = sortColumns["id"];
             }
 
+            // Добавляем сортировку к запросу
             query = request.IsDescending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
 
-            // Получаем общее количество записей
+            // Получаем параметры пагинации
             var totalCount = await query.CountAsync();
+            var pageNumber = Math.Max(request.PageNumber, 0);
+            var pageSize = request.PageSize > 0 ? request.PageSize : DefaultPageSize;
+            var startItem = pageNumber * pageSize;
 
-            var startItem = (request.PageNumber - 1) * request.PageSize;
-            var numItems = request.PageSize;
-
+            // Выполняем запрос
             var items = await query
                 .Skip(startItem)
-                .Take(numItems)
+                .Take(pageSize)
                 .Select(x => new HistoryDto(
                     x.Id,
                     x.Text,
@@ -78,7 +82,7 @@
                     x.EventType.Name))
                 .ToListAsync();
 
-            return new HistoryListResponseDto(items, totalCount, request.PageNumber, request.PageSize);
+            return new HistoryListResponseDto(items, totalCount, pageNumber, pageSize);
         }
     }
 }

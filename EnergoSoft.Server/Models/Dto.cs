@@ -15,8 +15,8 @@
     // DTO запроса истории
     public record HistoryListRequestDto
     (
-        [FromQuery(Name = "page")] int PageNumber = 1,
-        [FromQuery(Name = "limit")] int PageSize = 10,
+        [FromQuery(Name = "page")] int PageNumber = 0,
+        [FromQuery(Name = "size")] int PageSize = 0,
         [FromQuery(Name = "text")] string? Text = default,
         [FromQuery(Name = "user")] string? UserFullName = default,
         [FromQuery(Name = "event")] string? EventTypeName = default,
