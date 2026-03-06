@@ -13,7 +13,8 @@ export class HistoryService {
     sortKey: keyof HistoryDto,
     sortDesc: boolean,
     page: number,
-    size: number): Observable<HistoryListDto> {
+    size: number,
+    filters: Partial<HistoryDto>): Observable<HistoryListDto> {
 
     let params = new HttpParams();
 

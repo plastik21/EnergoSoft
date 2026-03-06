@@ -7,6 +7,13 @@ import {
 } from '@angular/core';
 
 import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule
+} from '@angular/forms';
+
+import {
   BehaviorSubject,
   combineLatest,
   debounceTime,
@@ -14,12 +21,15 @@ import {
   Observable,
   share,
   switchMap,
-  finalize
+  finalize,
+  startWith,
+  distinctUntilChanged
 } from 'rxjs';
 
 import {
   TuiRoot,
-  TuiLoader
+  TuiLoader,
+  TuiTextfield
 } from '@taiga-ui/core';
 
 import {
@@ -42,7 +52,10 @@ import { HistoryService } from './history.service'
     TuiRoot,
     TuiLoader,
     TuiTable,
-    TuiTablePagination
+    TuiTablePagination,
+    TuiTextfield,
+    FormsModule,
+    ReactiveFormsModule
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -57,19 +70,35 @@ export class App {
     'text',
     'userFullName',
     'date',
-    'eventTypeName'];
+    'eventTypeName'
+  ];
+
+  protected readonly filters = new FormGroup({
+    id: new FormControl(''),
+    text: new FormControl(''),
+    userFullName: new FormControl(''),
+    date: new FormControl(''),
+    eventTypeName: new FormControl('')
+  });
 
   protected readonly page$ = new BehaviorSubject(0);
   protected readonly size$ = new BehaviorSubject(10);
   protected readonly sortKey$ = new BehaviorSubject<keyof HistoryDto>('id');
   protected readonly direction$ = new BehaviorSubject<TuiSortDirection>(TuiSortDirection.Asc);
-  protected readonly isLoading$ = new BehaviorSubject<boolean>(true);
+  protected readonly isLoading$ = new BehaviorSubject(true);
+
+  protected readonly filters$: Observable<Partial<HistoryDto>> = this.filters.valueChanges.pipe(
+    startWith(this.filters.value),
+    debounceTime(500), // Задержка только для ввода текста
+    distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+  );
 
   protected readonly request$ = combineLatest([
     this.sortKey$,
     this.direction$,
     this.page$,
-    this.size$
+    this.size$,
+    this.filters$
   ]).pipe(
     // zero time debounce for a case when both key and direction change
     debounceTime(0),
@@ -94,11 +123,19 @@ export class App {
     sortKey: keyof HistoryDto,
     direction: TuiSortDirection,
     page: number,
-    size: number): Observable<HistoryListDto> {
+    size: number,
+    filters: Partial<HistoryDto>): Observable<HistoryListDto> {
 
     try {
+
       this.isLoading$.next(true);
-      return this.historyService.getHistory(sortKey, direction == TuiSortDirection.Desc, page, size).pipe(finalize(() => this.isLoading$.next(false)));
+
+      return this.historyService.getHistory(
+        sortKey,
+        direction == TuiSortDirection.Desc,
+        page,
+        size,
+        filters).pipe(finalize(() => this.isLoading$.next(false)));
     }
     catch (err) {
       console.error(err);

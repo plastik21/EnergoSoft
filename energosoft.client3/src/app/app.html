@@ -5,6 +5,7 @@
     <table tuiTable
            class="table"
            [columns]="columns"
+           [formGroup]="filters"
            [direction]="(direction$ | async) ?? -1"
            [tuiSortBy]="sortKey$ | async"
            (tuiSortChange)="onSortChange($event)">
@@ -39,6 +40,18 @@
               tuiSortable
               [requiredSort]="true"
               [resizable]="true">Название типа события</th>
+        </tr>
+        <tr tuiThGroup>
+          @for (column of columns; track $index) {
+          <th tuiTh>
+            <tui-textfield tuiTextfieldSize="s"
+                           class="filter-input">
+              <input tuiTextfield                     
+                     placeholder="Поиск..."
+                     [formControlName]="column"/>
+            </tui-textfield>
+          </th>
+          }
         </tr>
       </thead>
       @let sortedData = (data$ | async) || [];
