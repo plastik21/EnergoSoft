@@ -41,7 +41,7 @@ import {
 } from '@taiga-ui/addon-table';
 
 import { HistoryDto, HistoryListDto } from './history.dto'
-import { HistoryService } from './history.service'
+import { HistoryService, HistoryFilters } from './history.service'
 
 @Component({
   standalone: true,
@@ -87,7 +87,7 @@ export class App {
   protected readonly direction$ = new BehaviorSubject<TuiSortDirection>(TuiSortDirection.Asc);
   protected readonly isLoading$ = new BehaviorSubject(true);
 
-  protected readonly filters$: Observable<Partial<HistoryDto>> = this.filters.valueChanges.pipe(
+  protected readonly filters$ = this.filters.valueChanges.pipe(
     startWith(this.filters.value),
     debounceTime(500), // Задержка только для ввода текста
     distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
@@ -102,7 +102,7 @@ export class App {
   ]).pipe(
     // zero time debounce for a case when both key and direction change
     debounceTime(0),
-    switchMap(params => this.getData(...params)),
+    switchMap(([sortKey, direction, page, size, filters]) => this.getData(sortKey, direction, page, size, filters as HistoryFilters)),
     share()
   );
 
@@ -124,7 +124,7 @@ export class App {
     direction: TuiSortDirection,
     page: number,
     size: number,
-    filters: Partial<HistoryDto>): Observable<HistoryListDto> {
+    filters: HistoryFilters): Observable<HistoryListDto> {
 
     try {
 
