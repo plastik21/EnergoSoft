@@ -8,8 +8,7 @@ import {
 
 import {
   FormControl,
-  FormGroup,
-  FormsModule,
+  FormGroup,  
   ReactiveFormsModule
 } from '@angular/forms';
 
@@ -53,8 +52,7 @@ import { HistoryService, HistoryFilters } from './history.service'
     TuiLoader,
     TuiTable,
     TuiTablePagination,
-    TuiTextfield,
-    FormsModule,
+    TuiTextfield,    
     ReactiveFormsModule
   ],
   templateUrl: './app.html',
@@ -65,13 +63,17 @@ export class App {
 
   protected readonly historyService: HistoryService = inject(HistoryService);
 
-  protected readonly columns: ReadonlyArray<keyof HistoryDto> = [
-    'id',
-    'text',
-    'userFullName',
-    'date',
-    'eventTypeName'
+  protected readonly columns = [
+    { id: 'id', label: 'ID' },
+    { id: 'text', label: 'Текст' },
+    { id: 'userFullName', label: 'ФИО пользователя' },
+    { id: 'date', label: 'Дата' },
+    { id: 'eventTypeName', label: 'Название типа события' },
   ];
+
+  protected get columnIds(): string[] {
+    return this.columns.map(x => x.id);
+  }
 
   protected readonly filters = new FormGroup({
     id: new FormControl(''),

@@ -4,59 +4,39 @@
               [showLoader]="!!(isLoading$ | async)">
     <table tuiTable
            class="table"
-           [columns]="columns"
+           [columns]="columnIds"
            [formGroup]="filters"
-           [direction]="(direction$ | async) ?? -1"
+           [direction]="(direction$ | async) ?? 1"
            [tuiSortBy]="sortKey$ | async"
            (tuiSortChange)="onSortChange($event)">
       <thead tuiThead>
+        <!-- Заголовок таблицы -->
         <tr tuiThGroup>
-          <th *tuiHead="'id'"
+          @for (column of columns; track column.id) {
+          <th *tuiHead="column.id"
               tuiTh
               tuiSortable
               [requiredSort]="true"
-              [resizable]="true">ID</th>
-
-          <th *tuiHead="'text'"
-              tuiTh
-              tuiSortable
-              [requiredSort]="true"
-              [resizable]="true">Текст</th>
-
-          <th *tuiHead="'userFullName'"
-              tuiTh
-              tuiSortable
-              [requiredSort]="true"
-              [resizable]="true">ФИО пользователя</th>
-
-          <th *tuiHead="'date'"
-              tuiTh
-              tuiSortable
-              [requiredSort]="true"
-              [resizable]="true">Дата</th>
-
-          <th *tuiHead="'eventTypeName'"
-              tuiTh
-              tuiSortable
-              [requiredSort]="true"
-              [resizable]="true">Название типа события</th>
+              [resizable]="true">{{column.label}}</th>
+          }
         </tr>
+        <!-- Поля фильтрации -->
         <tr tuiThGroup>
-          @for (column of columns; track $index) {
+          @for (column of columns; track column.id) {
           <th tuiTh>
             <tui-textfield tuiTextfieldSize="s"
                            class="filter-input">
-              <input tuiTextfield                     
+              <input tuiTextfield
                      placeholder="Поиск..."
-                     [formControlName]="column"/>
+                     [formControlName]="column.id" />
             </tui-textfield>
           </th>
           }
         </tr>
       </thead>
-      @let sortedData = (data$ | async) || [];
-      <tbody tuiTbody [data]="sortedData">
-        @for (item of sortedData; track item.id) {
+      @let data = (data$ | async) || [];
+      <tbody tuiTbody [data]="data">
+        @for (item of data; track item.id) {
         <tr tuiTr>
           <td *tuiCell="'id'" tuiTd>{{ item.id }}</td>
           <td *tuiCell="'text'" tuiTd>{{ item.text }}</td>
