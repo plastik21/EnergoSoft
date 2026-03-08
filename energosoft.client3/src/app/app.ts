@@ -76,7 +76,14 @@ export class App {
     { id: 'eventTypeName', label: 'Название типа события' },
   ];
 
-  protected readonly columnsControl = new FormGroup(
+  protected readonly filtersGroup = new FormGroup(
+    this.columns.reduce((acc, col) => {
+      acc[col.id] = new FormControl('');
+      return acc;
+    }, {} as Record<string, FormControl>)
+  );
+
+  protected readonly showColumnsGroup = new FormGroup(
     this.columns.reduce((acc, col) => {
       acc[col.id] = new FormControl(col.id != 'id');
       return acc;
@@ -85,21 +92,14 @@ export class App {
 
   protected get visibleColumnIds(): string[] {
     return this.columns
-      .filter(col => this.columnsControl.get(col.id)?.value)
+      .filter(col => this.showColumnsGroup.get(col.id)?.value)
       .map(col => col.id);
   }
 
   protected get visibleColumns(): { id: string, label: string }[] {
-    return this.columns.filter(col => this.visibleColumnIds.includes(col.id));
+    let visibleColumnIds = this.visibleColumnIds;
+    return this.columns.filter(col => visibleColumnIds.includes(col.id));
   }
-
-  protected readonly filters = new FormGroup({
-    id: new FormControl(''),
-    text: new FormControl(''),
-    userFullName: new FormControl(''),
-    date: new FormControl(''),
-    eventTypeName: new FormControl('')
-  });
 
   protected readonly page$ = new BehaviorSubject(0);
   protected readonly size$ = new BehaviorSubject(10);
@@ -107,8 +107,8 @@ export class App {
   protected readonly direction$ = new BehaviorSubject<TuiSortDirection>(TuiSortDirection.Asc);
   protected readonly isLoading$ = new BehaviorSubject(true);
 
-  protected readonly filters$ = this.filters.valueChanges.pipe(
-    startWith(this.filters.value),
+  protected readonly filters$ = this.filtersGroup.valueChanges.pipe(
+    startWith(this.filtersGroup.value),
     debounceTime(500), // Задержка только для ввода текста
     distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
   );
@@ -129,12 +129,12 @@ export class App {
   protected readonly data$ = this.request$.pipe(map(x => x?.items ?? []));
   protected readonly total$ = this.request$.pipe(map(x => x?.totalCount ?? 0));
 
-  protected onSortChange(e: TuiSortChange<HistoryDto>): void {
+  protected onSortChange(e: TuiSortChange<HistoryDto>) {
     this.sortKey$.next(e.sortKey!);
     this.direction$.next(e.sortDirection);
   }
 
-  protected onPagination(e: TuiTablePaginationEvent): void {
+  protected onPagination(e: TuiTablePaginationEvent) {
     this.page$.next(e.page);
     this.size$.next(e.size);
   }
