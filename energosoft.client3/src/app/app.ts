@@ -28,8 +28,11 @@ import {
 import {
   TuiRoot,
   TuiLoader,
-  TuiTextfield
+  TuiTextfield,
+  TuiLabel
 } from '@taiga-ui/core';
+
+import { TuiCheckbox } from '@taiga-ui/kit'
 
 import {
   TuiTable,
@@ -53,6 +56,8 @@ import { HistoryService, HistoryFilters } from './history.service'
     TuiTable,
     TuiTablePagination,
     TuiTextfield,
+    TuiLabel,
+    TuiCheckbox,
     ReactiveFormsModule
   ],
   templateUrl: './app.html',
@@ -61,7 +66,7 @@ import { HistoryService, HistoryFilters } from './history.service'
 })
 export class App {
 
-  protected readonly historyService: HistoryService = inject(HistoryService);
+  private readonly historyService: HistoryService = inject(HistoryService);
 
   protected readonly columns = [
     { id: 'id', label: 'ID' },
@@ -71,22 +76,22 @@ export class App {
     { id: 'eventTypeName', label: 'Название типа события' },
   ];
 
-  protected hiddenColumns = new Set<string>(['id']);
-
-  protected get visibleColumns(): { id: string, label: string }[] {
-    return this.columns.filter(x => !this.hiddenColumns.has(x.id));
-  }
-
-  protected get visibleColumnIds(): string[] {
-    return this.visibleColumns.map(x => x.id);
-  }
-
   protected readonly columnsControl = new FormGroup(
     this.columns.reduce((acc, col) => {
-      acc[col.id] = new FormControl(true); // По умолчанию все включены
+      acc[col.id] = new FormControl(col.id != 'id');
       return acc;
     }, {} as Record<string, FormControl>)
   );
+
+  protected get visibleColumnIds(): string[] {
+    return this.columns
+      .filter(col => this.columnsControl.get(col.id)?.value)
+      .map(col => col.id);
+  }
+
+  protected get visibleColumns(): { id: string, label: string }[] {
+    return this.columns.filter(col => this.visibleColumnIds.includes(col.id));
+  }
 
   protected readonly filters = new FormGroup({
     id: new FormControl(''),

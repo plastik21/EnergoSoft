@@ -56,5 +56,16 @@
         </tr>
       </tfoot>
     </table>
+    <!-- Скрытие столбцов -->
+    <form [formGroup]="columnsControl"
+          style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+      @for (col of columns; track col.id) {
+      <label tuiLabel class="tui-space_vertical-2">
+        <input [formControlName]="col.id"
+               tuiCheckbox
+               type="checkbox" />{{ col.label }}
+      </label>
+      }
+    </form>
   </tui-loader>
 </tui-root>
