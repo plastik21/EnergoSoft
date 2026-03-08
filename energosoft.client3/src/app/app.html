@@ -4,7 +4,7 @@
               [showLoader]="!!(isLoading$ | async)">
     <table tuiTable
            class="table"
-           [columns]="columnIds"
+           [columns]="visibleColumnIds"
            [formGroup]="filters"
            [direction]="(direction$ | async) ?? 1"
            [tuiSortBy]="sortKey$ | async"
@@ -12,7 +12,7 @@
       <thead tuiThead>
         <!-- Заголовок таблицы -->
         <tr tuiThGroup>
-          @for (column of columns; track column.id) {
+          @for (column of visibleColumns; track column.id) {
           <th *tuiHead="column.id"
               tuiTh
               tuiSortable
@@ -22,10 +22,9 @@
         </tr>
         <!-- Поля фильтрации -->
         <tr tuiThGroup>
-          @for (column of columns; track column.id) {
+          @for (column of visibleColumns; track column.id) {
           <th tuiTh>
-            <tui-textfield tuiTextfieldSize="s"
-                           class="filter-input">
+            <tui-textfield tuiTextfieldSize="s" class="filter-input">
               <input tuiTextfield
                      placeholder="Поиск..."
                      [formControlName]="column.id" />

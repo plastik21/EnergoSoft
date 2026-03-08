@@ -8,7 +8,7 @@ import {
 
 import {
   FormControl,
-  FormGroup,  
+  FormGroup,
   ReactiveFormsModule
 } from '@angular/forms';
 
@@ -52,7 +52,7 @@ import { HistoryService, HistoryFilters } from './history.service'
     TuiLoader,
     TuiTable,
     TuiTablePagination,
-    TuiTextfield,    
+    TuiTextfield,
     ReactiveFormsModule
   ],
   templateUrl: './app.html',
@@ -71,9 +71,22 @@ export class App {
     { id: 'eventTypeName', label: 'Название типа события' },
   ];
 
-  protected get columnIds(): string[] {
-    return this.columns.map(x => x.id);
+  protected hiddenColumns = new Set<string>(['id']);
+
+  protected get visibleColumns(): { id: string, label: string }[] {
+    return this.columns.filter(x => !this.hiddenColumns.has(x.id));
   }
+
+  protected get visibleColumnIds(): string[] {
+    return this.visibleColumns.map(x => x.id);
+  }
+
+  protected readonly columnsControl = new FormGroup(
+    this.columns.reduce((acc, col) => {
+      acc[col.id] = new FormControl(true); // По умолчанию все включены
+      return acc;
+    }, {} as Record<string, FormControl>)
+  );
 
   protected readonly filters = new FormGroup({
     id: new FormControl(''),
@@ -142,7 +155,7 @@ export class App {
     catch (err) {
       console.error(err);
       this.isLoading$.next(false);
-      return new Observable<HistoryListDto>();
+      return {} as Observable<HistoryListDto>;
     }
   }
 }
