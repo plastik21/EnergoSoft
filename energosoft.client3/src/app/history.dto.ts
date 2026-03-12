@@ -13,3 +13,10 @@ export interface HistoryListDto {
   pageNumber: number,
   pageSize: number
 }
+
+export interface HistoryListDto2 {
+  items: Array<HistoryDto[]>,
+  totalCount: number,
+  pageNumber: number,
+  pageSize: number
+}

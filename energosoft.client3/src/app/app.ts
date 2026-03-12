@@ -42,7 +42,12 @@ import {
   type TuiTablePaginationEvent
 } from '@taiga-ui/addon-table';
 
-import { HistoryDto, HistoryListDto } from './history.dto'
+import {
+  HistoryDto,
+  HistoryListDto,
+  HistoryListDto2
+} from './history.dto'
+
 import { HistoryService, HistoryFilters } from './history.service'
 
 @Component({
@@ -60,7 +65,7 @@ import { HistoryService, HistoryFilters } from './history.service'
     TuiCheckbox,
     ReactiveFormsModule
   ],
-  templateUrl: './app.html',
+  templateUrl: './app.grouping.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -126,7 +131,21 @@ export class App {
     share()
   );
 
+  protected readonly request2$ = combineLatest([
+    this.sortKey$,
+    this.direction$,
+    this.page$,
+    this.size$,
+    this.filters$
+  ]).pipe(
+    // zero time debounce for a case when both key and direction change
+    debounceTime(0),
+    switchMap(([sortKey, direction, page, size, filters]) => this.getData2(sortKey, direction, page, size, filters as HistoryFilters)),
+    share()
+  );
+
   protected readonly data$ = this.request$.pipe(map(x => x?.items ?? []));
+  protected readonly data2$ = this.request2$.pipe(map(x => x?.items ?? []));
   protected readonly total$ = this.request$.pipe(map(x => x?.totalCount ?? 0));
 
   protected onSortChange(e: TuiSortChange<HistoryDto>) {
@@ -161,6 +180,31 @@ export class App {
       console.error(err);
       this.isLoading$.next(false);
       return {} as Observable<HistoryListDto>;
+    }
+  }
+
+  private getData2(
+    sortKey: keyof HistoryDto,
+    direction: TuiSortDirection,
+    page: number,
+    size: number,
+    filters: HistoryFilters): Observable<HistoryListDto2> {
+
+    try {
+
+      this.isLoading$.next(true);
+
+      return this.historyService.getGroupedHistory(
+        sortKey,
+        direction == TuiSortDirection.Desc,
+        page,
+        size,
+        filters).pipe(finalize(() => this.isLoading$.next(false)));
+    }
+    catch (err) {
+      console.error(err);
+      this.isLoading$.next(false);
+      return {} as Observable<HistoryListDto2>;
     }
   }
 }

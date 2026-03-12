@@ -32,4 +32,12 @@
         int PageNumber,
         int PageSize
     );
+
+    public record HistoryListResponseDto2
+    (
+        List<HistoryDto[]> Items,
+        int TotalCount,
+        int PageNumber,
+        int PageSize
+    );
 }
