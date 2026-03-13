@@ -29,10 +29,14 @@ import {
   TuiRoot,
   TuiLoader,
   TuiTextfield,
-  TuiLabel
+  TuiLabel,
+  TuiButton
 } from '@taiga-ui/core';
 
-import { TuiCheckbox } from '@taiga-ui/kit'
+import {
+  TuiCheckbox,
+  TuiChevron
+} from '@taiga-ui/kit'
 
 import {
   TuiTable,
@@ -43,7 +47,7 @@ import {
 } from '@taiga-ui/addon-table';
 
 import {
-  HistoryDto,  
+  HistoryDto,
   HistoryListDto2,
   HistoryFilters
 } from './history.dto'
@@ -63,6 +67,8 @@ import { HistoryService } from './history.service'
     TuiTextfield,
     TuiLabel,
     TuiCheckbox,
+    TuiButton,
+    TuiChevron,
     ReactiveFormsModule
   ],
   templateUrl: './app2.html',
@@ -73,7 +79,8 @@ export class App2 {
 
   private readonly historyService: HistoryService = inject(HistoryService);
 
-  protected readonly columns = [
+  protected readonly columns: { id: string, label: string }[] = [
+    { id: 'children', label: '' },
     { id: 'id', label: 'ID' },
     { id: 'text', label: 'Текст' },
     { id: 'userFullName', label: 'ФИО пользователя' },
@@ -142,6 +149,13 @@ export class App2 {
   protected onPagination(e: TuiTablePaginationEvent) {
     this.page$.next(e.page);
     this.size$.next(e.size);
+  }
+
+  // Состояние развёрнутости группы
+  protected readonly rowState: Record<number, boolean> = {};
+
+  protected toggleRow(index: number): void {
+    this.rowState[index] = !this.rowState[index];
   }
 
   private getData(

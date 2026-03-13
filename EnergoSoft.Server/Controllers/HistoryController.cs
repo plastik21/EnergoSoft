@@ -150,7 +150,19 @@
                         x.OrderByDescending(sortKeySelector.Compile()) :
                         x.OrderBy(sortKeySelector.Compile()))
                         .AsEnumerable()
-                        .Select(y => new HistoryDto(y.Id, y.Text, y.Date, y.User.FullName, y.EventType.Name)).ToArray())
+                        .Select(y => new HistoryDto
+                        (
+                            y.Id,
+                            y.Text,
+                            y.Date,
+                            y.User.FullName,
+                            y.EventType.Name
+                        )))
+                .Select(x => new HistoryGroupedItem
+                (
+                    x.First(),
+                    x.Skip(1).ToArray()
+                 ))
                 .ToArray();
 
             return new HistoryListResponseDto2(items, totalCount, pageNumber, pageSize);

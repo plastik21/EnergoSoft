@@ -14,8 +14,13 @@ export interface HistoryListDto {
   pageSize: number
 }
 
+export interface HistoryGroupedItem {
+  root: HistoryDto,
+  children: HistoryDto[]
+}
+
 export interface HistoryListDto2 {
-  items: Array<HistoryDto[]>,
+  items: HistoryGroupedItem[],
   totalCount: number,
   pageNumber: number,
   pageSize: number

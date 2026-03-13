@@ -12,7 +12,7 @@
         <thead tuiThead>
           <!-- Заголовок таблицы -->
           <tr tuiThGroup>
-            <th tuiTh></th>
+            <!--<th tuiTh></th>-->
             @for (column of visibleColumns; track column.id) {
             <th *tuiHead="column.id"
                 tuiTh
@@ -23,7 +23,7 @@
           </tr>
           <!-- Поля фильтрации -->
           <tr tuiThGroup>
-            <th tuiTh></th>
+            <!--<th tuiTh></th>-->
             @for (column of visibleColumns; track column.id) {
             <th tuiTh>
               <tui-textfield tuiTextfieldSize="s" class="filter-input">
@@ -38,34 +38,46 @@
         @let data = (data$ | async) || [];
         <tbody tuiTbody [data]="data">
           <ng-container>
-            @for (group of data; track $index) {
-              @let groupLen = group.length;
-              @for (item of group; track $index; let i = $index) {
-              <tr tuiTr>
-                <td tuiTd>
-                  <button appearance="flat-grayscale"
-                          size="xs"
-                          tuiIconButton
-                          type="button"
-                          class="chevron-btn"
-                          [attr.title]="groupLen ? '' : 'No children'"
-                          [disabled]="!groupLen"
-                          [style.border-radius]="'100%'">
-                          <!--[tuiChevron]="rowState[i] ?? false"
-                          (click)="toggleRow(i)">-->                    
-                    Toggle
-                  </button>
-                </td>
-                <td *tuiCell="'id'" tuiTd>{{ item.id }}</td>
-                <td *tuiCell="'text'" tuiTd>{{ item.text }}</td>
-                <td *tuiCell="'userFullName'" tuiTd>{{ item.userFullName }}</td>
-                <td *tuiCell="'date'" tuiTd>{{ item.date | date: 'dd.MM.yyyy HH:mm:ss' }}</td>
-                <td *tuiCell="'eventTypeName'" tuiTd>{{ item.eventTypeName }}</td>
+            @for (item of data; track $index; let i = $index) {
+            <tr tuiTr>
+              <td *tuiCell="'children'" tuiTd>
+                <button appearance="flat-grayscale"
+                        size="xs"
+                        tuiIconButton
+                        type="button"
+                        class="chevron-btn"
+                        [attr.title]="item.children.length ? '' : 'No children'"
+                        [disabled]="!item.children.length"
+                        [style.border-radius]="'100%'"
+                        [tuiChevron]="rowState[i] || false"
+                        (click)="toggleRow(i)">
+                  Toggle
+                </button>
+              </td>
+              <td *tuiCell="'id'" tuiTd>{{ item.root.id }}</td>
+              <td *tuiCell="'text'" tuiTd>{{ item.root.text }}</td>
+              <td *tuiCell="'userFullName'" tuiTd>{{ item.root.userFullName }}</td>
+              <td *tuiCell="'date'" tuiTd>{{ item.root.date | date: 'dd.MM.yyyy HH:mm:ss' }}</td>
+              <td *tuiCell="'eventTypeName'" tuiTd>{{ item.root.eventTypeName }}</td>
+            </tr>
+            @if (item.children.length) {
+            <tui-table-expand [expanded]="rowState[i] || false">
+              @for (child of item.children; track $index) {
+              <tr tuiTr class="child">
+                <td *tuiCell="'children'" tuiTd>
+                <td *tuiCell="'id'" tuiTd>{{ child.id }}</td>
+                <td *tuiCell="'text'" tuiTd>{{ child.text }}</td>
+                <td *tuiCell="'userFullName'" tuiTd>{{ child.userFullName }}</td>
+                <td *tuiCell="'date'" tuiTd>{{ child.date | date: 'dd.MM.yyyy HH:mm:ss' }}</td>
+                <td *tuiCell="'eventTypeName'" tuiTd>{{ child.eventTypeName }}</td>
               </tr>
               }
+            </tui-table-expand>
+            }
             }
           </ng-container>
         </tbody>
+        <!-- Пагинация -->
         <tfoot>
           <tr>
             <td [colSpan]="columns.length">

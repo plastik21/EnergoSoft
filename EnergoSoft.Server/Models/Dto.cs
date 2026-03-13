@@ -35,9 +35,15 @@
         int PageSize
     );
 
+    public record HistoryGroupedItem
+    (
+        HistoryDto Root,
+        HistoryDto[] Children
+    );
+
     public record HistoryListResponseDto2
     (
-        HistoryDto[][] Items,
+        HistoryGroupedItem[] Items,
         int TotalCount,
         int PageNumber,
         int PageSize
