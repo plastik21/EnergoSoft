@@ -1,6 +1,7 @@
 ﻿namespace EnergoSoft.Server
 {
     using Microsoft.AspNetCore.Mvc;
+    using System.Xml.Linq;
 
     // DTO истории
     public record HistoryDto
@@ -21,7 +22,8 @@
         [FromQuery(Name = "user")] string? UserFullName = default,
         [FromQuery(Name = "event")] string? EventTypeName = default,
         [FromQuery(Name = "sort")] string? SortBy = default,
-        [FromQuery(Name = "desc")] bool IsDescending = false
+        [FromQuery(Name = "desc")] bool IsDescending = false,
+        [FromQuery(Name = "group")] string? GroupBy = default
     );
 
     // DTO ответа на запрос истории
@@ -35,7 +37,7 @@
 
     public record HistoryListResponseDto2
     (
-        List<HistoryDto[]> Items,
+        HistoryDto[][] Items,
         int TotalCount,
         int PageNumber,
         int PageSize

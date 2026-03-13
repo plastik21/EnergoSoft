@@ -12,6 +12,15 @@
 
         private readonly EnergoSoftDbContext _context;
 
+        private static readonly Dictionary<string, Expression<Func<History, object>>> columnsMap = new()
+        {
+            { "id", x => x.Id },
+            { "text", x => x.Text ?? string.Empty },
+            { "userFullName", x => x.User.FullName },
+            { "date", x => x.Date },
+            { "eventTypeName", x => x.EventType.Name }
+        };
+
         public HistoryController(EnergoSoftDbContext context)
         {
             _context = context;
@@ -45,20 +54,11 @@
             }
 
             // Сортировка
-            var sortColumns = new Dictionary<string, Expression<Func<History, object>>>
-            {
-                { "id", x => x.Id },
-                { "text", x => x.Text ?? string.Empty },
-                { "userFullName", x => x.User.FullName },
-                { "date", x => x.Date },
-                { "eventTypeName", x => x.EventType.Name }
-            };
-
             var sortBy = !string.IsNullOrWhiteSpace(request.SortBy) ? request.SortBy : "id";
 
-            if (!sortColumns.TryGetValue(sortBy, out var keySelector))
+            if (!columnsMap.TryGetValue(sortBy, out var keySelector))
             {
-                keySelector = sortColumns["id"];
+                keySelector = columnsMap["id"];
             }
 
             // Добавляем сортировку к запросу
@@ -113,52 +113,45 @@
             }
 
             // Сортировка
-            var sortColumns = new Dictionary<string, Expression<Func<History, object>>>
-            {
-                { "id", x => x.Id },
-                { "text", x => x.Text ?? string.Empty },
-                { "userFullName", x => x.User.FullName },
-                { "date", x => x.Date },
-                { "eventTypeName", x => x.EventType.Name }
-            };
-
             var sortBy = !string.IsNullOrWhiteSpace(request.SortBy) ? request.SortBy : "id";
 
-            if (!sortColumns.TryGetValue(sortBy, out var keySelector))
+            if (!columnsMap.TryGetValue(sortBy, out var sortKeySelector))
             {
-                keySelector = sortColumns["id"];
+                sortKeySelector = columnsMap["id"];
             }
 
             // Добавляем сортировку к запросу
-            query = request.IsDescending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
-
-            var query2 = query.GroupBy(x => x.UserId)
-                .Select(x => new
-                {
-                    UserId = x.Key,
-                    Items = x.Select(y => new HistoryDto
-                    (
-                        y.Id,
-                        y.Text,
-                        y.Date,
-                        y.User.FullName,
-                        y.EventType.Name
-                    ))
-                });
+            query = request.IsDescending ? query.OrderByDescending(sortKeySelector) : query.OrderBy(sortKeySelector);
 
             // Получаем параметры пагинации
-            var totalCount = await query2.CountAsync();
+            var totalCount = await query.CountAsync();
             var pageNumber = Math.Max(request.PageNumber, 0);
             var pageSize = request.PageSize > 0 ? request.PageSize : DefaultPageSize;
             var startItem = pageNumber * pageSize;
 
             // Выполняем запрос
-            var result = await query2
+            var result = await query
                 .Skip(startItem)
                 .Take(pageSize)
                 .ToListAsync();
 
-            var items = result.Select(x => x.Items.ToArray()).ToList();
+            // Группировка
+            var groupBy = !string.IsNullOrWhiteSpace(request.GroupBy) ? request.GroupBy : "userFullName";
+
+            if (!columnsMap.TryGetValue(groupBy, out var groupKeySelector))
+            {
+                groupKeySelector = columnsMap["userFullName"];
+            }
+
+            // Финальные данные
+            var items = result
+                .GroupBy(groupKeySelector.Compile())
+                .Select(x => (request.IsDescending ?
+                        x.OrderByDescending(sortKeySelector.Compile()) :
+                        x.OrderBy(sortKeySelector.Compile()))
+                        .AsEnumerable()
+                        .Select(y => new HistoryDto(y.Id, y.Text, y.Date, y.User.FullName, y.EventType.Name)).ToArray())
+                .ToArray();
 
             return new HistoryListResponseDto2(items, totalCount, pageNumber, pageSize);
         }

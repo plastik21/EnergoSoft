@@ -35,7 +35,7 @@
             }
           </tr>
         </thead>
-        @let data = (data2$ | async) || [];
+        @let data = (data$ | async) || [];
         <tbody tuiTbody [data]="data">
           <ng-container>
             @for (group of data; track $index) {
@@ -50,9 +50,9 @@
                           class="chevron-btn"
                           [attr.title]="groupLen ? '' : 'No children'"
                           [disabled]="!groupLen"
-                          [style.border-radius]="'100%'"
-                          [tuiChevron]="rowState[i] ?? false"
-                          (click)="toggleRow(i)">
+                          [style.border-radius]="'100%'">
+                          <!--[tuiChevron]="rowState[i] ?? false"
+                          (click)="toggleRow(i)">-->                    
                     Toggle
                   </button>
                 </td>

@@ -1,15 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, retry } from 'rxjs';
-import { HistoryDto, HistoryListDto, HistoryListDto2 } from './history.dto'
-
-export interface HistoryFilters {
-  id: number | null,
-  text: string | null,
-  date: Date | null,
-  userFullName: string | null,
-  eventTypeName: string | null
-}
+import { HistoryDto, HistoryListDto, HistoryListDto2, HistoryFilters } from './history.dto'
 
 @Injectable({ providedIn: 'root' })
 export class HistoryService {
@@ -44,7 +36,8 @@ export class HistoryService {
     sortDesc: boolean,
     page: number,
     size: number,
-    filters: HistoryFilters): Observable<HistoryListDto2> {
+    filters: HistoryFilters,
+    groupKey: keyof HistoryDto): Observable<HistoryListDto2> {
 
     let params = new HttpParams();
 
@@ -55,7 +48,8 @@ export class HistoryService {
       .set('user', filters.userFullName ?? '')
       .set('event', filters.eventTypeName ?? '')
       .set('sort', sortKey)
-      .set('desc', sortDesc);
+      .set('desc', sortDesc)
+      .set('group', groupKey);
 
     return this.http.get<HistoryListDto2>(this.apiUrl2, { params: params }).pipe(retry({ count: 3, delay: 2000, resetOnSuccess: true }));
   }  

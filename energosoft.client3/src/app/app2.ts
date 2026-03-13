@@ -43,8 +43,8 @@ import {
 } from '@taiga-ui/addon-table';
 
 import {
-  HistoryDto,
-  HistoryListDto,
+  HistoryDto,  
+  HistoryListDto2,
   HistoryFilters
 } from './history.dto'
 
@@ -65,11 +65,11 @@ import { HistoryService } from './history.service'
     TuiCheckbox,
     ReactiveFormsModule
   ],
-  templateUrl: './app.html',
+  templateUrl: './app2.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class App {
+export class App2 {
 
   private readonly historyService: HistoryService = inject(HistoryService);
 
@@ -149,23 +149,24 @@ export class App {
     direction: TuiSortDirection,
     page: number,
     size: number,
-    filters: HistoryFilters): Observable<HistoryListDto> {
+    filters: HistoryFilters): Observable<HistoryListDto2> {
 
     try {
 
       this.isLoading$.next(true);
 
-      return this.historyService.getHistory(
+      return this.historyService.getGroupedHistory(
         sortKey,
         direction == TuiSortDirection.Desc,
         page,
         size,
-        filters).pipe(finalize(() => this.isLoading$.next(false)));
+        filters,
+        'userFullName').pipe(finalize(() => this.isLoading$.next(false)));
     }
     catch (err) {
       console.error(err);
       this.isLoading$.next(false);
-      return {} as Observable<HistoryListDto>;
+      return {} as Observable<HistoryListDto2>;
     }
   }
 }

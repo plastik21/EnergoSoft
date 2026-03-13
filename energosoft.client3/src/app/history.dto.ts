@@ -20,3 +20,11 @@ export interface HistoryListDto2 {
   pageNumber: number,
   pageSize: number
 }
+
+export interface HistoryFilters {
+  id: number | null,
+  text: string | null,
+  date: Date | null,
+  userFullName: string | null,
+  eventTypeName: string | null
+}
