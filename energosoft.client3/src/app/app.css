@@ -1,4 +1,35 @@
+@import '@taiga-ui/core/styles/taiga-ui-local.less';
 
 .table {
-  inline-size: 100%;
+  inline-size: 99%;
+
+  tbody {
+    tr {
+      td {
+        transition: background var(--tui-duration-ms) ease-in-out;
+      }
+
+      &.child td {
+        background: var(--tui-background-base-alt);
+      }
+
+      &:hover {
+        td {
+          background: var(--tui-background-base-alt);
+        }
+
+        &.child td {
+          background: var(--tui-background-neutral-1-hover);
+        }
+      }
+    }
+
+    tui-table-expand {
+      animation-duration: 0.5s !important;
+    }
+  }
+
+  button[disabled].chevron-btn::after {
+    cursor: initial;
+  }
 }

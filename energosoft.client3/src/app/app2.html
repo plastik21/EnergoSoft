@@ -12,7 +12,7 @@
         <thead tuiThead>
           <!-- Заголовок таблицы -->
           <tr tuiThGroup>
-            <!--<th tuiTh></th>-->
+            <th tuiTh width="50"></th>
             @for (column of visibleColumns; track column.id) {
             <th *tuiHead="column.id"
                 tuiTh
@@ -23,7 +23,7 @@
           </tr>
           <!-- Поля фильтрации -->
           <tr tuiThGroup>
-            <!--<th tuiTh></th>-->
+            <th tuiTh width="50"></th>
             @for (column of visibleColumns; track column.id) {
             <th tuiTh>
               <tui-textfield tuiTextfieldSize="s" class="filter-input">
@@ -80,7 +80,7 @@
         <!-- Пагинация -->
         <tfoot>
           <tr>
-            <td [colSpan]="columns.length">
+            <td [colSpan]="columns.length+1">
               <tui-table-pagination class="tui-space_top-2"
                                     [page]="(page$ | async) || 0"
                                     [total]="(total$ | async) || 0"
@@ -91,8 +91,7 @@
       </table>
     </form>
     <!-- Скрытие столбцов -->
-    <form [formGroup]="showColumnsGroup"
-          style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+    <form [formGroup]="showColumnsGroup" style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
       @for (col of columns; track col.id) {
       <label tuiLabel class="tui-space_vertical-2">
         <input [formControlName]="col.id"

@@ -80,7 +80,6 @@ export class App2 {
   private readonly historyService: HistoryService = inject(HistoryService);
 
   protected readonly columns: { id: string, label: string }[] = [
-    { id: 'children', label: '' },
     { id: 'id', label: 'ID' },
     { id: 'text', label: 'Текст' },
     { id: 'userFullName', label: 'ФИО пользователя' },
@@ -103,9 +102,11 @@ export class App2 {
   );
 
   protected get visibleColumnIds(): string[] {
-    return this.columns
+    const visibleIds = this.columns
       .filter(col => this.showColumnsGroup.get(col.id)?.value)
       .map(col => col.id);
+
+    return ['children', ...visibleIds];
   }
 
   protected get visibleColumns(): { id: string, label: string }[] {
