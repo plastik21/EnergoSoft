@@ -1,7 +1,6 @@
 ﻿namespace EnergoSoft.Server
 {
     using Microsoft.AspNetCore.Mvc;
-    using System.Xml.Linq;
 
     // DTO истории
     public record HistoryDto

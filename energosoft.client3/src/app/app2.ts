@@ -22,7 +22,8 @@ import {
   switchMap,
   finalize,
   startWith,
-  distinctUntilChanged
+  distinctUntilChanged,
+  tap
 } from 'rxjs';
 
 import {
@@ -30,12 +31,16 @@ import {
   TuiLoader,
   TuiTextfield,
   TuiLabel,
-  TuiButton
+  TuiButton,
+  TuiDropdown,
+  TuiDataList
 } from '@taiga-ui/core';
 
 import {
   TuiCheckbox,
-  TuiChevron
+  TuiChevron,
+  TuiSelect,
+  TuiDataListWrapper
 } from '@taiga-ui/kit'
 
 import {
@@ -53,6 +58,12 @@ import {
 } from './history.dto'
 
 import { HistoryService } from './history.service'
+import { TuiStringHandler } from '@taiga-ui/cdk/types';
+
+interface ColumnDef {
+  id: keyof HistoryDto,
+  label: string
+}
 
 @Component({
   standalone: true,
@@ -69,6 +80,10 @@ import { HistoryService } from './history.service'
     TuiCheckbox,
     TuiButton,
     TuiChevron,
+    TuiSelect,
+    TuiDataListWrapper,
+    TuiDropdown,
+    TuiDataList,
     ReactiveFormsModule
   ],
   templateUrl: './app2.html',
@@ -79,7 +94,7 @@ export class App2 {
 
   private readonly historyService: HistoryService = inject(HistoryService);
 
-  protected readonly columns: { id: string, label: string }[] = [
+  protected readonly columns: ColumnDef[] = [
     { id: 'id', label: 'ID' },
     { id: 'text', label: 'Текст' },
     { id: 'userFullName', label: 'ФИО пользователя' },
@@ -101,6 +116,8 @@ export class App2 {
     }, {} as Record<string, FormControl>)
   );
 
+  protected readonly groupKeyControl = new FormControl<keyof HistoryDto>('id');
+
   protected get visibleColumnIds(): string[] {
     const visibleIds = this.columns
       .filter(col => this.showColumnsGroup.get(col.id)?.value)
@@ -109,20 +126,26 @@ export class App2 {
     return ['children', ...visibleIds];
   }
 
-  protected get visibleColumns(): { id: string, label: string }[] {
+  protected get visibleColumns(): ColumnDef[] {
     let visibleColumnIds = this.visibleColumnIds;
     return this.columns.filter(col => visibleColumnIds.includes(col.id));
   }
+
+  // Преобразуем id столбца в label
+  protected readonly getColumnLabelById: TuiStringHandler<string> = (id) =>
+    this.columns.find((item) => item.id === id)?.label ?? '';
 
   protected readonly page$ = new BehaviorSubject(0);
   protected readonly size$ = new BehaviorSubject(10);
   protected readonly sortKey$ = new BehaviorSubject<keyof HistoryDto>('id');
   protected readonly direction$ = new BehaviorSubject<TuiSortDirection>(TuiSortDirection.Asc);
+  protected readonly groupKey$ = new BehaviorSubject<keyof HistoryDto>('id');
   protected readonly isLoading$ = new BehaviorSubject(true);
 
   protected readonly filters$ = this.filtersGroup.valueChanges.pipe(
     startWith(this.filtersGroup.value),
-    debounceTime(500), // Задержка только для ввода текста
+    debounceTime(500),
+    tap(() => this.rowState = {}),
     distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
   );
 
@@ -131,11 +154,19 @@ export class App2 {
     this.direction$,
     this.page$,
     this.size$,
-    this.filters$
+    this.filters$,
+    this.groupKey$
   ]).pipe(
     // zero time debounce for a case when both key and direction change
     debounceTime(0),
-    switchMap(([sortKey, direction, page, size, filters]) => this.getData(sortKey, direction, page, size, filters as HistoryFilters)),
+    switchMap(([sortKey, direction, page, size, filters, groupKey]) =>
+      this.getData(
+        sortKey,
+        direction,
+        page,
+        size,
+        filters as HistoryFilters,
+        groupKey)),
     share()
   );
 
@@ -148,12 +179,18 @@ export class App2 {
   }
 
   protected onPagination(e: TuiTablePaginationEvent) {
+    this.rowState = {};
     this.page$.next(e.page);
     this.size$.next(e.size);
   }
 
-  // Состояние развёрнутости группы
-  protected readonly rowState: Record<number, boolean> = {};
+  protected onGroupChange(id: keyof HistoryDto): void {
+    this.rowState = {};
+    this.groupKey$.next(id);
+  }
+
+  // Состояние развёрнутости групп
+  protected rowState: Record<number, boolean> = {};
 
   protected toggleRow(index: number): void {
     this.rowState[index] = !this.rowState[index];
@@ -164,7 +201,8 @@ export class App2 {
     direction: TuiSortDirection,
     page: number,
     size: number,
-    filters: HistoryFilters): Observable<HistoryListDto2> {
+    filters: HistoryFilters,
+    groupKey: keyof HistoryDto): Observable<HistoryListDto2> {
 
     try {
 
@@ -176,7 +214,7 @@ export class App2 {
         page,
         size,
         filters,
-        'userFullName').pipe(finalize(() => this.isLoading$.next(false)));
+        groupKey).pipe(finalize(() => this.isLoading$.next(false)));
     }
     catch (err) {
       console.error(err);

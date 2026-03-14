@@ -22,6 +22,7 @@
             }
           </tr>
           <!-- Поля фильтрации -->
+          <!-- TODO: фильтр даты -->
           <tr tuiThGroup>
             <th tuiTh width="50"></th>
             @for (column of visibleColumns; track column.id) {
@@ -80,7 +81,7 @@
         <!-- Пагинация -->
         <tfoot>
           <tr>
-            <td [colSpan]="columns.length+1">
+            <td [colSpan]="columns.length + 1">
               <tui-table-pagination class="tui-space_top-2"
                                     [page]="(page$ | async) || 0"
                                     [total]="(total$ | async) || 0"
@@ -90,15 +91,54 @@
         </tfoot>
       </table>
     </form>
-    <!-- Скрытие столбцов -->
-    <form [formGroup]="showColumnsGroup" style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
-      @for (col of columns; track col.id) {
-      <label tuiLabel class="tui-space_vertical-2">
-        <input [formControlName]="col.id"
-               tuiCheckbox
-               type="checkbox" />{{ col.label }}
-      </label>
-      }
-    </form>
+
+    <div class="tui-space_top-10" style="display: flex; justify-content: center; width: 100%;">
+
+      <div style="display: flex; align-items: flex-start; gap: 4rem;">
+
+        <!-- Отображение столбцов -->
+        <div style="display: flex; flex-direction: column;">
+          <div class="tui-text_caption tui-space_bottom-2">
+            Отображение столбцов:
+          </div>
+          <form [formGroup]="showColumnsGroup" class="checkbox-list">
+            @for (col of columns; track col.id) {
+            <label tuiLabel class="checkbox-item">
+              <input [formControlName]="col.id"
+                     tuiCheckbox
+                     type="checkbox" />
+              {{ col.label }}
+            </label>
+            }
+          </form>
+        </div>
+
+        <!-- Группировка -->
+        <div style="display: flex; flex-direction: column;">
+          <label tuiLabel>
+            Группировка:
+            <tui-textfield tuiChevron
+                           [tuiTextfieldCleaner]="false"
+                           [stringify]="getColumnLabelById"
+                           style="width: 320px">
+              <input tuiSelect
+                     [formControl]="groupKeyControl"
+                     (ngModelChange)="onGroupChange($event)" />
+
+              <tui-data-list *tuiTextfieldDropdown>
+                @for (col of columns; track col.id) {
+                <button new
+                        tuiOption
+                        type="button"
+                        [value]="col.id">
+                  {{ col.label }}
+                </button>
+                }
+              </tui-data-list>
+            </tui-textfield>
+          </label>
+        </div>
+      </div>
+    </div>
   </tui-loader>
 </tui-root>

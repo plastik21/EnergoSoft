@@ -52,5 +52,5 @@ export class HistoryService {
       .set('group', groupKey);
 
     return this.http.get<HistoryListDto2>(this.apiUrl2, { params: params }).pipe(retry({ count: 3, delay: 2000, resetOnSuccess: true }));
-  }  
+  }
 }
