@@ -12,19 +12,23 @@
         <thead tuiThead>
           <!-- Заголовок таблицы -->
           <tr tuiThGroup>
-            <th tuiTh width="50"></th>
+            <th tuiTh width="50px"></th>
             @for (column of visibleColumns; track column.id) {
             <th *tuiHead="column.id"
                 tuiTh
                 tuiSortable
                 [requiredSort]="true"
-                [resizable]="true">{{column.label}}</th>
+                [resizable]="true"
+                [style.width.px]="columnWidths[column.id]"
+                (tuiResized)="onColumnResize(column.id, $event)">
+              {{column.label}}
+            </th>
             }
           </tr>
           <!-- Поля фильтрации -->
           <!-- TODO: фильтр даты -->
           <tr tuiThGroup>
-            <th tuiTh width="50"></th>
+            <th tuiTh width="50px"></th>
             @for (column of visibleColumns; track column.id) {
             <th tuiTh>
               <tui-textfield tuiTextfieldSize="s" class="filter-input">
@@ -78,12 +82,14 @@
             }
           </ng-container>
         </tbody>
+
         <!-- Пагинация -->
         <tfoot>
           <tr>
             <td [colSpan]="columns.length + 1">
               <tui-table-pagination class="tui-space_top-2"
                                     [page]="(page$ | async) || 0"
+                                    [size]="(size$ | async) || 10"
                                     [total]="(total$ | async) || 0"
                                     (paginationChange)="onPagination($event)" />
             </td>
@@ -92,7 +98,7 @@
       </table>
     </form>
 
-    <div class="tui-space_top-10" style="display: flex; justify-content: center; width: 100%;">
+    <div class="tui-space_top-10 tui-space_bottom-10" style="display: flex; justify-content: center; width: 100%;">
 
       <div style="display: flex; align-items: flex-start; gap: 4rem;">
 
@@ -101,7 +107,7 @@
           <div class="tui-text_caption tui-space_bottom-2">
             Отображение столбцов:
           </div>
-          <form [formGroup]="showColumnsGroup" class="checkbox-list">
+          <form [formGroup]="visibleColumnsGroup" class="checkbox-list">
             @for (col of columns; track col.id) {
             <label tuiLabel class="checkbox-item">
               <input [formControlName]="col.id"

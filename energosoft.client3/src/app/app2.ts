@@ -1,10 +1,17 @@
-import { AsyncPipe, DatePipe } from '@angular/common';
+import {
+  AsyncPipe,
+  DatePipe
+} from '@angular/common';
 
 import {
   ChangeDetectionStrategy,
   Component,
   inject
 } from '@angular/core';
+
+import {
+  takeUntilDestroyed
+} from '@angular/core/rxjs-interop';
 
 import {
   FormControl,
@@ -23,7 +30,8 @@ import {
   finalize,
   startWith,
   distinctUntilChanged,
-  tap
+  tap,
+  Subject  
 } from 'rxjs';
 
 import {
@@ -65,6 +73,8 @@ interface ColumnDef {
   label: string
 }
 
+const STORAGE_KEY = 'table_settings_v1';
+
 @Component({
   standalone: true,
   selector: 'app-root',
@@ -92,6 +102,23 @@ interface ColumnDef {
 })
 export class App2 {
 
+  constructor() {
+
+    this.visibleColumnsGroup.valueChanges.pipe(
+      debounceTime(300),
+      takeUntilDestroyed()
+    ).subscribe(() => this.saveSettings());
+
+    this.resize$.pipe(
+      debounceTime(500),
+      takeUntilDestroyed()
+    ).subscribe(() => this.saveSettings());
+  }
+
+  ngOnInit(): void {
+    this.loadSettings();
+  }
+
   private readonly historyService: HistoryService = inject(HistoryService);
 
   protected readonly columns: ColumnDef[] = [
@@ -102,6 +129,8 @@ export class App2 {
     { id: 'eventTypeName', label: 'Название типа события' },
   ];
 
+  protected columnWidths: Record<string, number> = {};
+
   protected readonly filtersGroup = new FormGroup(
     this.columns.reduce((acc, col) => {
       acc[col.id] = new FormControl('');
@@ -109,7 +138,7 @@ export class App2 {
     }, {} as Record<string, FormControl>)
   );
 
-  protected readonly showColumnsGroup = new FormGroup(
+  protected readonly visibleColumnsGroup = new FormGroup(
     this.columns.reduce((acc, col) => {
       acc[col.id] = new FormControl(col.id != 'id');
       return acc;
@@ -120,7 +149,7 @@ export class App2 {
 
   protected get visibleColumnIds(): string[] {
     const visibleIds = this.columns
-      .filter(col => this.showColumnsGroup.get(col.id)?.value)
+      .filter(col => this.visibleColumnsGroup.get(col.id)?.value)
       .map(col => col.id);
 
     return ['children', ...visibleIds];
@@ -141,12 +170,13 @@ export class App2 {
   protected readonly direction$ = new BehaviorSubject<TuiSortDirection>(TuiSortDirection.Asc);
   protected readonly groupKey$ = new BehaviorSubject<keyof HistoryDto>('id');
   protected readonly isLoading$ = new BehaviorSubject(true);
+  protected readonly resize$ = new Subject<{ id: string; width: number }>();
 
   protected readonly filters$ = this.filtersGroup.valueChanges.pipe(
     startWith(this.filtersGroup.value),
     debounceTime(500),
-    tap(() => this.rowState = {}),
-    distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+    distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
+    tap(() => this.rowState = {})
   );
 
   protected readonly request$ = combineLatest([
@@ -157,7 +187,6 @@ export class App2 {
     this.filters$,
     this.groupKey$
   ]).pipe(
-    // zero time debounce for a case when both key and direction change
     debounceTime(0),
     switchMap(([sortKey, direction, page, size, filters, groupKey]) =>
       this.getData(
@@ -167,7 +196,8 @@ export class App2 {
         size,
         filters as HistoryFilters,
         groupKey)),
-    share()
+    share(),
+    tap(() => this.saveSettings())
   );
 
   protected readonly data$ = this.request$.pipe(map(x => x?.items ?? []));
@@ -176,6 +206,14 @@ export class App2 {
   protected onSortChange(e: TuiSortChange<HistoryDto>) {
     this.sortKey$.next(e.sortKey!);
     this.direction$.next(e.sortDirection);
+  }
+
+  protected onColumnResize(id: string, width: number): void {
+    this.columnWidths = {
+      ...this.columnWidths,
+      [id]: width
+    };
+    this.resize$.next({ id, width });
   }
 
   protected onPagination(e: TuiTablePaginationEvent) {
@@ -221,5 +259,69 @@ export class App2 {
       this.isLoading$.next(false);
       return {} as Observable<HistoryListDto2>;
     }
+  }
+
+  private loadSettings(): void {
+
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if (!saved) return;
+
+    try {
+
+      const s = JSON.parse(saved);
+
+      if (s.filters) {
+        this.filtersGroup.patchValue(s.filters, { emitEvent: false });
+      }
+
+      if (s.visibleColumns) {
+        this.visibleColumnsGroup.patchValue(s.visibleColumns, { emitEvent: false });
+      }
+
+      if (s.sortKey) {
+        this.sortKey$.next(s.sortKey);
+      }
+
+      if (s.direction) {
+        this.direction$.next(s.direction);
+      }
+
+      if (s.groupKey) {
+        this.groupKey$.next(s.groupKey);
+        this.groupKeyControl.setValue(s.groupKey, { emitEvent: false });
+      }
+
+      if (s.size) {
+        this.size$.next(s.size);
+      }
+
+      if (s.page) {
+        this.page$.next(s.page);
+      }
+
+      if (s.columnWidths) {
+        this.columnWidths = s.columnWidths;
+      }
+
+    } catch (e) {
+      console.error('Не удалось загрузить настройки таблицы:', e);
+    }
+  }
+
+  private saveSettings(): void {
+
+    const settings = {
+      filters: this.filtersGroup.value,
+      visibleColumns: this.visibleColumnsGroup.value,
+      sortKey: this.sortKey$.value,
+      direction: this.direction$.value,
+      groupKey: this.groupKey$.value,
+      size: this.size$.value,
+      page: this.page$.value,
+      columnWidths: this.columnWidths
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }
 }
