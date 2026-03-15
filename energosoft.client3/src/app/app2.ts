@@ -32,7 +32,8 @@ import {
   distinctUntilChanged,
   tap,
   Subject,
-  defer
+  defer,
+  shareReplay
 } from 'rxjs';
 
 import {
@@ -61,13 +62,16 @@ import {
 } from '@taiga-ui/addon-table';
 
 import {
+  TuiStringHandler
+} from '@taiga-ui/cdk/types';
+
+import {
   HistoryDto,
   HistoryListDto2,
   HistoryFilters
 } from './history.dto'
 
 import { HistoryService } from './history.service'
-import { TuiStringHandler } from '@taiga-ui/cdk/types';
 
 interface ColumnDef {
   id: keyof HistoryDto,
@@ -195,7 +199,11 @@ export class App2 {
     this.filters$,
     this.groupKey$
   ]).pipe(
+    // Микрозадержка для синхронизации потоков
     debounceTime(0),
+    // Сохраняем текущие настройки
+    tap(() => this.saveSettings()),
+    // Маппим потоки
     switchMap(([sortKey, direction, page, size, filters, groupKey]) =>
       this.getData(
         sortKey,
@@ -204,8 +212,9 @@ export class App2 {
         size,
         filters as HistoryFilters,
         groupKey)),
-    share(),
-    tap(() => this.saveSettings())
+    // Запоминаем последнее пришедшее значение и
+    // сразу отдаем его любому новому подписчику
+    shareReplay(1)
   );
 
   protected readonly data$ = this.request$.pipe(map(x => x?.items ?? []));
@@ -260,7 +269,9 @@ export class App2 {
         page,
         size,
         filters,
-        groupKey).pipe(finalize(() => this.isLoading$.next(false)));
+        groupKey).pipe(
+          finalize(() => this.isLoading$.next(false))
+        );
     }
     catch (err) {
       console.error(err);
