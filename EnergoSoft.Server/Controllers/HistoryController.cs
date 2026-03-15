@@ -2,6 +2,7 @@
 {
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
+    using Npgsql.EntityFrameworkCore.PostgreSQL;
     using System.Linq.Expressions;
 
     [ApiController]
@@ -104,6 +105,12 @@
             if (!string.IsNullOrWhiteSpace(request.UserFullName))
             {
                 query = query.Where(x => EF.Functions.ILike(x.User.FullName ?? string.Empty, $"%{request.UserFullName}%"));
+            }
+
+            // Фильтр по Date
+            if (!string.IsNullOrEmpty(request.Date))
+            {
+                query = query.Where(x => EF.Functions.ILike(x.Date.ToString(), $"%{request.Date}%"));
             }
 
             // Фильтр по EventTypeName

@@ -29,7 +29,7 @@ export interface HistoryListDto2 {
 export interface HistoryFilters {
   id: number | null,
   text: string | null,
-  date: Date | null,
+  date: string | null,
   userFullName: string | null,
   eventTypeName: string | null
 }

@@ -33,7 +33,7 @@
             <th tuiTh>
               <tui-textfield tuiTextfieldSize="s" class="filter-input">
                 <input tuiTextfield
-                       placeholder="Поиск..."
+                       [placeholder]="column.id === 'date' ? 'ДД.ММ.ГГГГ чч:мм:сс' : 'Поиск...'"
                        [formControlName]="column.id" />
               </tui-textfield>
             </th>

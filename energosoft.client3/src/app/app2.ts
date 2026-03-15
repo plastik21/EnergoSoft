@@ -186,7 +186,7 @@ export class App2 {
       startWith(this.filtersGroup.value)
     )
   ).pipe(
-    debounceTime(500),
+    debounceTime(3000),
     distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
     tap(() => this.rowState = {})
   );

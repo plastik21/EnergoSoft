@@ -44,12 +44,25 @@ export class HistoryService {
     params = params
       .set('page', page)
       .set('size', size)
-      .set('text', filters.text ?? '')
-      .set('user', filters.userFullName ?? '')
-      .set('event', filters.eventTypeName ?? '')
       .set('sort', sortKey)
       .set('desc', sortDesc)
       .set('group', groupKey);
+
+    if (filters.text) {
+      params = params.set('text', filters.text);
+    }
+
+    if (filters.userFullName) {
+      params = params.set('user', filters.userFullName);
+    }
+
+    if (filters.date) {
+      params = params.set('date', filters.date);
+    }
+
+    if (filters.eventTypeName) {
+      params = params.set('event', filters.eventTypeName);
+    }
 
     return this.http.get<HistoryListDto2>(this.apiUrl2, { params: params }).pipe(retry({ count: 3, delay: 2000, resetOnSuccess: true }));
   }

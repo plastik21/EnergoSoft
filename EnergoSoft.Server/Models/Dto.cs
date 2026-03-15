@@ -19,6 +19,7 @@
         [FromQuery(Name = "size")] int PageSize = 0,
         [FromQuery(Name = "text")] string? Text = default,
         [FromQuery(Name = "user")] string? UserFullName = default,
+        [FromQuery(Name = "date")] string? Date = default,
         [FromQuery(Name = "event")] string? EventTypeName = default,
         [FromQuery(Name = "sort")] string? SortBy = default,
         [FromQuery(Name = "desc")] bool IsDescending = false,
