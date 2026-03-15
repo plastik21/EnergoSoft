@@ -31,7 +31,8 @@ import {
   startWith,
   distinctUntilChanged,
   tap,
-  Subject  
+  Subject,
+  defer
 } from 'rxjs';
 
 import {
@@ -104,11 +105,13 @@ export class App2 {
 
   constructor() {
 
+    // Подписка на изменение видимости столбцов
     this.visibleColumnsGroup.valueChanges.pipe(
       debounceTime(300),
       takeUntilDestroyed()
     ).subscribe(() => this.saveSettings());
 
+    // Подписка на изменение размеров столбцов
     this.resize$.pipe(
       debounceTime(500),
       takeUntilDestroyed()
@@ -172,8 +175,13 @@ export class App2 {
   protected readonly isLoading$ = new BehaviorSubject(true);
   protected readonly resize$ = new Subject<{ id: string; width: number }>();
 
-  protected readonly filters$ = this.filtersGroup.valueChanges.pipe(
-    startWith(this.filtersGroup.value),
+  // defer гарантирует, что поток filters$ создастся только тогда, когда на него подпишется combineLatest в request$
+  // К этому моменту loadSettings() уже отработал и заполнил this.filtersGroup.value
+  protected readonly filters$ = defer(() =>
+    this.filtersGroup.valueChanges.pipe(
+      startWith(this.filtersGroup.value)
+    )
+  ).pipe(
     debounceTime(500),
     distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
     tap(() => this.rowState = {})
