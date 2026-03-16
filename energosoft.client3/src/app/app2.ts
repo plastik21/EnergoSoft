@@ -50,7 +50,8 @@ import {
   TuiCheckbox,
   TuiChevron,
   TuiSelect,
-  TuiDataListWrapper
+  TuiDataListWrapper,
+  TuiInputDateRange
 } from '@taiga-ui/kit'
 
 import {
@@ -62,6 +63,10 @@ import {
 } from '@taiga-ui/addon-table';
 
 import {
+  TuiDay, TuiDayRange
+} from '@taiga-ui/cdk';
+
+import {
   TuiStringHandler
 } from '@taiga-ui/cdk/types';
 
@@ -71,7 +76,9 @@ import {
   HistoryFilters
 } from './history.dto'
 
-import { HistoryService } from './history.service'
+import {
+  HistoryService
+} from './history.service'
 
 interface ColumnDef {
   id: keyof HistoryDto,
@@ -86,6 +93,7 @@ const STORAGE_KEY = 'table_settings_v1';
   imports: [
     AsyncPipe,
     DatePipe,
+    ReactiveFormsModule,
     TuiRoot,
     TuiLoader,
     TuiTable,
@@ -99,32 +107,13 @@ const STORAGE_KEY = 'table_settings_v1';
     TuiDataListWrapper,
     TuiDropdown,
     TuiDataList,
-    ReactiveFormsModule
+    TuiInputDateRange
   ],
   templateUrl: './app2.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class App2 {
-
-  constructor() {
-
-    // Подписка на изменение видимости столбцов
-    this.visibleColumnsGroup.valueChanges.pipe(
-      debounceTime(300),
-      takeUntilDestroyed()
-    ).subscribe(() => this.saveSettings());
-
-    // Подписка на изменение размеров столбцов
-    this.resize$.pipe(
-      debounceTime(500),
-      takeUntilDestroyed()
-    ).subscribe(() => this.saveSettings());
-  }
-
-  ngOnInit(): void {
-    this.loadSettings();
-  }
 
   private readonly historyService: HistoryService = inject(HistoryService);
 
@@ -140,7 +129,10 @@ export class App2 {
 
   protected readonly filtersGroup = new FormGroup(
     this.columns.reduce((acc, col) => {
-      acc[col.id] = new FormControl('');
+      acc[col.id] =
+        col.id === 'date' ?
+          new FormControl<TuiDayRange | null>(null) :
+          new FormControl('');
       return acc;
     }, {} as Record<string, FormControl>)
   );
@@ -153,23 +145,6 @@ export class App2 {
   );
 
   protected readonly groupKeyControl = new FormControl<keyof HistoryDto>('id');
-
-  protected get visibleColumnIds(): string[] {
-    const visibleIds = this.columns
-      .filter(col => this.visibleColumnsGroup.get(col.id)?.value)
-      .map(col => col.id);
-
-    return ['children', ...visibleIds];
-  }
-
-  protected get visibleColumns(): ColumnDef[] {
-    let visibleColumnIds = this.visibleColumnIds;
-    return this.columns.filter(col => visibleColumnIds.includes(col.id));
-  }
-
-  // Преобразуем id столбца в label
-  protected readonly getColumnLabelById: TuiStringHandler<string> = (id) =>
-    this.columns.find((item) => item.id === id)?.label ?? '';
 
   protected readonly page$ = new BehaviorSubject(0);
   protected readonly size$ = new BehaviorSubject(10);
@@ -186,7 +161,7 @@ export class App2 {
       startWith(this.filtersGroup.value)
     )
   ).pipe(
-    debounceTime(3000),
+    debounceTime(1000),
     distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
     tap(() => this.rowState = {})
   );
@@ -219,6 +194,42 @@ export class App2 {
 
   protected readonly data$ = this.request$.pipe(map(x => x?.items ?? []));
   protected readonly total$ = this.request$.pipe(map(x => x?.totalCount ?? 0));
+
+  constructor() {
+    // Подписка на изменение видимости столбцов
+    this.visibleColumnsGroup.valueChanges.pipe(
+      debounceTime(300),
+      takeUntilDestroyed()
+    ).subscribe(() => this.saveSettings());
+
+    // Подписка на изменение размеров столбцов
+    this.resize$.pipe(
+      debounceTime(500),
+      takeUntilDestroyed()
+    ).subscribe(() => this.saveSettings());
+  }
+
+  ngOnInit(): void {
+    this.loadSettings();
+  }
+
+  protected get visibleColumnIds(): string[] {
+    const visibleIds = this.columns
+      .filter(col => this.visibleColumnsGroup.get(col.id)?.value)
+      .map(col => col.id);
+
+    return ['children', ...visibleIds];
+  }
+
+  protected get visibleColumns(): ColumnDef[] {
+    let visibleColumnIds = this.visibleColumnIds;
+    return this.columns.filter(col => visibleColumnIds.includes(col.id));
+  }
+
+  // Преобразуем id столбца в label
+  protected readonly getColumnLabelById: TuiStringHandler<string> = (id) =>
+    this.columns.find((item) => item.id === id)?.label ?? '';
+
 
   protected onSortChange(e: TuiSortChange<HistoryDto>) {
     this.sortKey$.next(e.sortKey!);
@@ -291,6 +302,16 @@ export class App2 {
       const s = JSON.parse(saved);
 
       if (s.filters) {
+
+        if (s.filters.date) {
+
+          const { from, to } = s.filters.date;
+          const dayFrom = typeof from === 'string' ? TuiDay.jsonParse(from) : new TuiDay(from.year, from.month, from.day);
+          const dayTo = typeof to === 'string' ? TuiDay.jsonParse(to) : new TuiDay(to.year, to.month, to.day);
+
+          s.filters.date = new TuiDayRange(dayFrom, dayTo);
+        }
+
         this.filtersGroup.patchValue(s.filters, { emitEvent: false });
       }
 

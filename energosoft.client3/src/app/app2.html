@@ -26,16 +26,27 @@
             }
           </tr>
           <!-- Поля фильтрации -->
-          <!-- TODO: фильтр даты -->
           <tr tuiThGroup>
             <th tuiTh width="50px"></th>
             @for (column of visibleColumns; track column.id) {
             <th tuiTh>
-              <tui-textfield tuiTextfieldSize="s" class="filter-input">
+              @if (column.id === 'date') {
+              <tui-textfield [tuiTextfieldCleaner]="true"
+                             tuiTextfieldSize="s">                
+                <input tuiInputDateRange
+                       placeholder="Поиск..."
+                       [formControlName]="column.id" />
+                <!-- Календарь привязывается к текстовому полю через дропдаун -->
+                <tui-calendar-range *tuiTextfieldDropdown></tui-calendar-range>
+              </tui-textfield>
+              } @else {
+              <tui-textfield tuiTextfieldSize="s"                             
+                             [tuiTextfieldCleaner]="true">
                 <input tuiTextfield
-                       [placeholder]="column.id === 'date' ? 'ДД.ММ.ГГГГ чч:мм:сс' : 'Поиск...'"
+                       placeholder="Поиск..."
                        [formControlName]="column.id" />
               </tui-textfield>
+              }
             </th>
             }
           </tr>

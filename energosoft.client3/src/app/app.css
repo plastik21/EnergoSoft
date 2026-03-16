@@ -1,8 +1,9 @@
 @import '@taiga-ui/core/styles/taiga-ui-local.less';
 
-.table {
-  inline-size: 99%;
+.table {  
   table-layout: fixed;
+  width: max-content;
+  min-width: 100%;
 
   tbody {
     tr {

@@ -57,7 +57,13 @@ export class HistoryService {
     }
 
     if (filters.date) {
-      params = params.set('date', filters.date);
+
+      let dateFrom = filters.date.from.toLocalNativeDate();
+      let dateTo = filters.date.to.toLocalNativeDate();
+
+      params = params
+        .set('date_from', dateFrom.toISOString())
+        .set('date_to', dateTo.toISOString());
     }
 
     if (filters.eventTypeName) {

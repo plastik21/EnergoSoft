@@ -107,10 +107,18 @@
                 query = query.Where(x => EF.Functions.ILike(x.User.FullName ?? string.Empty, $"%{request.UserFullName}%"));
             }
 
-            // Фильтр по Date
-            if (!string.IsNullOrEmpty(request.Date))
+            // Фильтр по дате
+            if (request.DateFrom.HasValue)
             {
-                query = query.Where(x => EF.Functions.ILike(x.Date.ToString(), $"%{request.Date}%"));
+                query = query.Where(x => x.Date >= request.DateFrom.Value);
+            }
+
+            // Фильтр по дате
+            if (request.DateTo.HasValue)
+            {
+                var dateTo = request.DateTo.Value.AddDays(1).AddSeconds(-1);
+
+                query = query.Where(x => x.Date < dateTo);
             }
 
             // Фильтр по EventTypeName

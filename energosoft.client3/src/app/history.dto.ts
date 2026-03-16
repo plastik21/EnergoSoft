@@ -1,4 +1,8 @@
 
+import {
+  TuiDayRange
+} from '@taiga-ui/cdk';
+
 export interface HistoryDto {
   id: number,
   text: string,
@@ -29,7 +33,7 @@ export interface HistoryListDto2 {
 export interface HistoryFilters {
   id: number | null,
   text: string | null,
-  date: string | null,
+  date: TuiDayRange | null,
   userFullName: string | null,
   eventTypeName: string | null
 }
