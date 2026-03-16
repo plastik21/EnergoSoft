@@ -2,7 +2,6 @@
 {
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
-    using Npgsql.EntityFrameworkCore.PostgreSQL;
     using System.Linq.Expressions;
 
     [ApiController]
