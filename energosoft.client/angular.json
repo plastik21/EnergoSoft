@@ -6,7 +6,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "energosoft.client3": {
+    "energosoft.client": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -74,10 +74,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "energosoft.client3:build:production"
+              "buildTarget": "energosoft.client:build:production"
             },
             "development": {
-              "buildTarget": "energosoft.client3:build:development"
+              "buildTarget": "energosoft.client:build:development"
             }
           },
           "defaultConfiguration": "development",
