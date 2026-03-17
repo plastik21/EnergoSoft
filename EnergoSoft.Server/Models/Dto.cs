@@ -30,7 +30,7 @@
     // DTO ответа на запрос истории
     public record HistoryListResponseDto
     (
-        IEnumerable<HistoryDto> Items,
+        HistoryGroupedItem[] Items,
         int TotalCount,
         int PageNumber,
         int PageSize
@@ -40,13 +40,5 @@
     (
         HistoryDto Root,
         HistoryDto[] Children
-    );
-
-    public record HistoryListResponseDto2
-    (
-        HistoryGroupedItem[] Items,
-        int TotalCount,
-        int PageNumber,
-        int PageSize
     );
 }

@@ -72,7 +72,7 @@ import {
 
 import {
   HistoryDto,
-  HistoryListDto2,
+  HistoryListDto,
   HistoryFilters
 } from './history.dto'
 
@@ -268,13 +268,13 @@ export class App {
     page: number,
     size: number,
     filters: HistoryFilters,
-    groupKey: keyof HistoryDto): Observable<HistoryListDto2> {
+    groupKey: keyof HistoryDto): Observable<HistoryListDto> {
 
     try {
 
       this.isLoading$.next(true);
 
-      return this.historyService.getGroupedHistory(
+      return this.historyService.getHistory(
         sortKey,
         direction == TuiSortDirection.Desc,
         page,
@@ -287,7 +287,7 @@ export class App {
     catch (err) {
       console.error(err);
       this.isLoading$.next(false);
-      return {} as Observable<HistoryListDto2>;
+      return {} as Observable<HistoryListDto>;
     }
   }
 

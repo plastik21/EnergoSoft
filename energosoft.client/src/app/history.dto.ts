@@ -11,19 +11,12 @@ export interface HistoryDto {
   eventTypeName: string
 }
 
-export interface HistoryListDto {
-  items: HistoryDto[],
-  totalCount: number,
-  pageNumber: number,
-  pageSize: number
-}
-
 export interface HistoryGroupedItem {
   root: HistoryDto,
   children: HistoryDto[]
 }
 
-export interface HistoryListDto2 {
+export interface HistoryListDto {
   items: HistoryGroupedItem[],
   totalCount: number,
   pageNumber: number,
