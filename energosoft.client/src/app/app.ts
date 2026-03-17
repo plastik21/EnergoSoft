@@ -109,11 +109,11 @@ const STORAGE_KEY = 'table_settings_v1';
     TuiDataList,
     TuiInputDateRange
   ],
-  templateUrl: './app2.html',
+  templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class App2 {
+export class App {
 
   private readonly historyService: HistoryService = inject(HistoryService);
 
