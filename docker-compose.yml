@@ -1,16 +1,44 @@
 ﻿services:
+  # База данных PostgreSQL
   postgres_db:
     image: postgres:17-alpine
     container_name: postgres_db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: 12345
-      POSTGRES_DB: postgres
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      # Для отладки в VS
+      - "${DB_PORT}:${DB_PORT}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  # Бэкенд .NET 9
+  web_api:
+    build:
+      context: .
+      dockerfile: EnergoSoft.Server/Dockerfile
+    container_name: dotnet_api
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      # Все переменные должны быть в файле .env
+      - ConnectionStrings__DefaultConnection=Host=postgres_db;Port=${DB_PORT};Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+    depends_on:
+      - postgres_db
+
+  # Фронтенд Angular + Nginx
+  angular_web:
+    build:
+      context: ./energosoft.client
+      dockerfile: Dockerfile
+    container_name: angular_ui
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - web_api
 
 volumes:
   postgres_data:

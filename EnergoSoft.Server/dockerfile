@@ -1,0 +1,36 @@
+﻿
+# Используем официальный образ .NET 9 SDK для компиляции
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+# Устанавливаем рабочую папку внутри контейнера
+WORKDIR /src
+
+# Копируем файл проекта для предварительного восстановления зависимостей
+COPY ["EnergoSoft.Server/EnergoSoft.Server.csproj", "EnergoSoft.Server/"]
+
+# Выполняем восстановление NuGet-пакетов
+RUN dotnet restore "EnergoSoft.Server/EnergoSoft.Server.csproj"
+
+# Копируем все остальные исходные файлы проекта в контейнер
+COPY . .
+
+# Переходим в папку с проектом сервера
+WORKDIR "/src/EnergoSoft.Server"
+
+# Компилируем и публикуем приложение в папку /app/publish в режиме Release
+RUN dotnet publish "EnergoSoft.Server.csproj" -c Release -o /app/publish --no-restore /p:UseAppHost=false
+
+# Используем максимально легкий образ ASP.NET Core Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+
+# Устанавливаем рабочую папку, где будет лежать готовое приложение
+WORKDIR /app
+
+# Копируем только скомпилированные файлы из этапа сборки (build)
+COPY --from=build /app/publish .
+
+# Указываем Docker, на каком порту внутри контейнера работает приложение
+EXPOSE 80
+
+# Команда для запуска приложения при старте контейнера
+ENTRYPOINT ["dotnet", "EnergoSoft.Server.dll"]

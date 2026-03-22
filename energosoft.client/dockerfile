@@ -1,0 +1,33 @@
+
+# Используем легковесный образ Node.js 20 на базе Alpine Linux
+FROM node:20-alpine AS build
+
+# Устанавливаем рабочую директорию внутри контейнера
+WORKDIR /app
+
+# Копируем файлы манифестов зависимостей
+COPY package*.json ./
+
+# Устанавливаем зависимости проекта
+RUN npm install
+
+# Копируем все исходные файлы проекта в контейнер
+COPY . .
+
+# Собираем проект в режиме production
+RUN npm run build -- --configuration production
+
+# Используем стабильный образ Nginx
+FROM nginx:stable-alpine
+
+# Копируем собранные файлы из предыдущего этапа в папку, откуда Nginx отдает контент
+COPY --from=build /app/dist/energosoft.client/browser /usr/share/nginx/html
+
+# Копируем кастомный конфиг Nginx для поддержки Angular Routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Открываем стандартный HTTP порт
+EXPOSE 80
+
+# Запускаем Nginx в фоновом режиме
+CMD ["nginx", "-g", "daemon off;"]
