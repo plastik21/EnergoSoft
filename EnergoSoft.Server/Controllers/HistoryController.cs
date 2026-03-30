@@ -2,6 +2,7 @@
 {
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.EntityFrameworkCore.Query;
     using System.Linq.Expressions;
 
     [ApiController]
@@ -29,45 +30,15 @@
         [HttpGet("list")]
         public async Task<HistoryListResponseDto> List([FromQuery] HistoryListRequestDto request)
         {
-            // Базовый запрос
-            var query = _context.Histories
-                .Include(x => x.User)
-                .Include(x => x.EventType)
-                .AsQueryable();
+            // Поле группировки
+            var groupBy = !string.IsNullOrWhiteSpace(request.GroupBy) ? request.GroupBy : "userFullName";
 
-            // Фильтр по Text
-            if (!string.IsNullOrWhiteSpace(request.Text))
+            if (!columnsMap.TryGetValue(groupBy, out var groupKeySelector))
             {
-                query = query.Where(x => EF.Functions.ILike(x.Text ?? string.Empty, $"%{request.Text}%"));
+                groupKeySelector = columnsMap["userFullName"];
             }
 
-            // Фильтр по UserFullName
-            if (!string.IsNullOrWhiteSpace(request.UserFullName))
-            {
-                query = query.Where(x => EF.Functions.ILike(x.User.FullName ?? string.Empty, $"%{request.UserFullName}%"));
-            }
-
-            // Фильтр по дате
-            if (request.DateFrom.HasValue)
-            {
-                query = query.Where(x => x.Date >= request.DateFrom.Value);
-            }
-
-            // Фильтр по дате
-            if (request.DateTo.HasValue)
-            {
-                var dateTo = request.DateTo.Value.AddDays(1).AddSeconds(-1);
-
-                query = query.Where(x => x.Date < dateTo);
-            }
-
-            // Фильтр по EventTypeName
-            if (!string.IsNullOrWhiteSpace(request.EventTypeName))
-            {
-                query = query.Where(x => EF.Functions.ILike(x.EventType.Name ?? string.Empty, $"%{request.EventTypeName}%"));
-            }
-
-            // Сортировка
+            // Поле сортировки
             var sortBy = !string.IsNullOrWhiteSpace(request.SortBy) ? request.SortBy : "id";
 
             if (!columnsMap.TryGetValue(sortBy, out var sortKeySelector))
@@ -75,28 +46,54 @@
                 sortKeySelector = columnsMap["id"];
             }
 
-            // Добавляем сортировку к запросу
-            query = request.IsDescending ? query.OrderByDescending(sortKeySelector) : query.OrderBy(sortKeySelector);
-
-            // Получаем параметры пагинации
-            var totalCount = await query.CountAsync();
+            // Параметры пагинации
             var pageNumber = Math.Max(request.PageNumber, 0);
             var pageSize = request.PageSize > 0 ? request.PageSize : DefaultPageSize;
-            var startItem = pageNumber * pageSize;
+
+            // Базовый запрос
+            var query = _context.Histories
+                .Include(x => x.User)
+                .Include(x => x.EventType)
+                .AsQueryable();
+
+            // Применяем фильтры
+            query = ApplyFilters(query, request);
+
+            // Получаем группы
+            var groupKeysQuery = query
+                .GroupBy(groupKeySelector)
+                .Select(x => x.Key);
+
+            // Всего групп
+            var totalCount = await groupKeysQuery.CountAsync();
+
+            if (sortBy == groupBy)
+            {
+                // Направление сортировки из запроса
+                groupKeysQuery =
+                    request.IsDescending ?
+                    groupKeysQuery.OrderByDescending(x => x) :
+                    groupKeysQuery.OrderBy(x => x);
+            }
+            else
+            {
+                // Направление сортировки по-умолчанию
+                groupKeysQuery = groupKeysQuery.OrderBy(x => x);
+            }
+
+            // Применяем пагинацию к группам
+            groupKeysQuery = groupKeysQuery
+                .Skip(pageNumber * pageSize)
+                .Take(pageSize);
+
+            // Фильтрация по группам (x => groupKeysQuery.Contains(groupKeySelector(x)))
+            query = query.Where(BuildContainsPredicate(groupKeySelector, groupKeysQuery));
+
+            // Добавляем сортировку
+            query = request.IsDescending ? query.OrderByDescending(sortKeySelector) : query.OrderBy(sortKeySelector);
 
             // Выполняем запрос
-            var result = await query
-                .Skip(startItem)
-                .Take(pageSize)
-                .ToListAsync();
-
-            // Группировка
-            var groupBy = !string.IsNullOrWhiteSpace(request.GroupBy) ? request.GroupBy : "userFullName";
-
-            if (!columnsMap.TryGetValue(groupBy, out var groupKeySelector))
-            {
-                groupKeySelector = columnsMap["userFullName"];
-            }
+            var result = await query.ToListAsync();
 
             // Финальные данные
             var items = result
@@ -121,6 +118,67 @@
                 .ToArray();
 
             return new HistoryListResponseDto(items, totalCount, pageNumber, pageSize);
+        }
+
+        private static IQueryable<History> ApplyFilters(IQueryable<History> query, HistoryListRequestDto request)
+        {
+            // Фильтр по Text
+            if (!string.IsNullOrWhiteSpace(request.Text))
+            {
+                query = query.Where(x => EF.Functions.ILike(x.Text ?? string.Empty, $"%{request.Text}%"));
+            }
+
+            // Фильтр по UserFullName
+            if (!string.IsNullOrWhiteSpace(request.UserFullName))
+            {
+                query = query.Where(x => EF.Functions.ILike(x.User.FullName ?? string.Empty, $"%{request.UserFullName}%"));
+            }
+
+            // Фильтр по дате
+            if (request.DateFrom.HasValue)
+            {
+                query = query.Where(x => x.Date >= request.DateFrom.Value);
+            }
+
+            // Фильтр по дате
+            if (request.DateTo.HasValue)
+            {
+                var dateTo = request.DateTo.Value.AddDays(1);
+
+                query = query.Where(x => x.Date < dateTo);
+            }
+
+            // Фильтр по EventTypeName
+            if (!string.IsNullOrWhiteSpace(request.EventTypeName))
+            {
+                query = query.Where(x => EF.Functions.ILike(x.EventType.Name ?? string.Empty, $"%{request.EventTypeName}%"));
+            }
+
+            return query;
+        }
+
+        private static Expression<Func<History, bool>> BuildContainsPredicate<TKey>(
+            Expression<Func<History, TKey>> selector,
+            IQueryable<TKey> values)
+        {
+            var method = typeof(Queryable)
+                .GetMethods()
+                .First(m => m.Name == "Contains" && m.GetParameters().Length == 2)
+                .MakeGenericMethod(typeof(TKey));
+
+            // Создаем новый параметр для итогового выражения
+            var parameter = Expression.Parameter(typeof(History), "x");
+
+            // Заменяем старый параметр из selector-а на новый
+            var newSelector = ReplacingExpressionVisitor.Replace(
+                selector.Parameters[0],
+                parameter,
+                selector.Body);
+
+            // values.Contains(x.Property)
+            var body = Expression.Call(null, method, values.Expression, newSelector);
+
+            return Expression.Lambda<Func<History, bool>>(body, parameter);
         }
     }
 }
