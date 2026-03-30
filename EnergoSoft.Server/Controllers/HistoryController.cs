@@ -94,7 +94,7 @@
 
             // Выполняем запрос
             var data = await query.ToListAsync();
-                        
+
             var sortKeyExpr = sortKeySelector.Compile();
             var groupKeyExpr = groupKeySelector.Compile();
 
@@ -103,7 +103,7 @@
                 .GroupBy(groupKeyExpr)
                 .Select(x => new HistoryGroupedItem
                 (
-                    GroupName: x.Key.ToString() ?? string.Empty,
+                    GroupName: GetGroupName(x.Key),
                     Children: (request.IsDescending ? x.OrderByDescending(sortKeyExpr) : x.OrderBy(sortKeyExpr))
                         .Select(y => new HistoryDto
                         (
@@ -114,7 +114,7 @@
                             y.EventType.Name
                         ))
                         .ToArray()
-                ))                
+                ))
                 .ToArray();
 
             return new HistoryListResponseDto(items, totalCount, pageNumber, pageSize);
@@ -179,6 +179,16 @@
             var body = Expression.Call(null, method, values.Expression, newSelector);
 
             return Expression.Lambda<Func<History, bool>>(body, parameter);
+        }
+
+        private static string GetGroupName(object key)
+        {
+            if (key is DateTime date)
+            {
+                return date.ToLocalTime().ToString();
+            }
+
+            return key?.ToString() ?? "Безымянная группа";
         }
     }
 }
