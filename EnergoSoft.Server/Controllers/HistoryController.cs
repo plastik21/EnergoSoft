@@ -93,15 +93,18 @@
             query = request.IsDescending ? query.OrderByDescending(sortKeySelector) : query.OrderBy(sortKeySelector);
 
             // Выполняем запрос
-            var result = await query.ToListAsync();
+            var data = await query.ToListAsync();
+                        
+            var sortKeyExpr = sortKeySelector.Compile();
+            var groupKeyExpr = groupKeySelector.Compile();
 
             // Финальные данные
-            var items = result
-                .GroupBy(groupKeySelector.Compile())
-                .Select(x => (request.IsDescending ?
-                        x.OrderByDescending(sortKeySelector.Compile()) :
-                        x.OrderBy(sortKeySelector.Compile()))
-                        .AsEnumerable()
+            var items = data
+                .GroupBy(groupKeyExpr)
+                .Select(x => new HistoryGroupedItem
+                (
+                    GroupName: x.Key.ToString() ?? string.Empty,
+                    Children: (request.IsDescending ? x.OrderByDescending(sortKeyExpr) : x.OrderBy(sortKeyExpr))
                         .Select(y => new HistoryDto
                         (
                             y.Id,
@@ -109,12 +112,9 @@
                             y.Date,
                             y.User.FullName,
                             y.EventType.Name
-                        )))
-                .Select(x => new HistoryGroupedItem
-                (
-                    x.First(),
-                    x.Skip(1).ToArray()
-                 ))
+                        ))
+                        .ToArray()
+                ))                
                 .ToArray();
 
             return new HistoryListResponseDto(items, totalCount, pageNumber, pageSize);

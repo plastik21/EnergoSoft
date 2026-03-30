@@ -12,7 +12,7 @@ export interface HistoryDto {
 }
 
 export interface HistoryGroupedItem {
-  root: HistoryDto,
+  groupName: string,
   children: HistoryDto[]
 }
 

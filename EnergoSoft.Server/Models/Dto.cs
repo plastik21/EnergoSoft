@@ -38,7 +38,7 @@
 
     public record HistoryGroupedItem
     (
-        HistoryDto Root,
+        string GroupName,
         HistoryDto[] Children
     );
 }
